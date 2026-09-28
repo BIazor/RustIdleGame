@@ -1,0 +1,42 @@
+[package]
+name = "rust_idle_game"
+version = "0.1.0"
+edition = "2021"
+description = "A base template for idle games in Rust"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/BIazor/RustIdleGame"
+
+[dependencies]
+# ECS for game architecture
+bevy_ecs = { version = "0.15", features = [] }
+# Serialization for save/load
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+# Random generation
+rand = "0.8"
+# Base64 encoding for save export
+base64 = "0.21"
+# Terminal UI
+ratatui = "0.26"
+crossterm = "0.27"
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+# Configuration
+config = "0.14"
+# Math utilities
+nalgebra = "0.32"
+
+[dev-dependencies]
+pretty_assertions = "1.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[profile.dev]
+opt-level = 0
+debug = true
