@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust Idle Game - Web Edition</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fa-solid fa-cube text-accent"></i>
+                <h1>Rust Idle Game</h1>
+                <span class="version-badge">v0.1.0-web</span>
+            </div>
+            <div class="header-stats">
+                <div class="stat-pill">
+                    <i class="fa-solid fa-star text-warning"></i>
+                    <span>Prestige Points: <strong id="header-prestige-points">0</strong></span>
+                </div>
+                <div class="stat-pill">
+                    <i class="fa-solid fa-bolt text-info"></i>
+                    <span>Multiplier: <strong id="header-multiplier">1.0x</strong></span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="save-btn" title="Save Game"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                <button class="btn btn-secondary" id="export-btn" title="Export Save"><i class="fa-solid fa-file-export"></i></button>
+                <button class="btn btn-secondary" id="import-btn" title="Import Save"><i class="fa-solid fa-file-import"></i></button>
+                <button class="btn btn-danger" id="reset-btn" title="Hard Reset"><i class="fa-solid fa-triangle-exclamation"></i></button>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <div class="main-container">
+            <!-- Left Sidebar: Resources & Clicker -->
+            <aside class="sidebar-left">
+                <div class="card clicker-card">
+                    <h2><i class="fa-solid fa-hand-pointer"></i> Actions</h2>
+                    <button class="btn-click" id="click-gold-btn">
+                        <i class="fa-solid fa-coins"></i>
+                        <span>Gather Gold</span>
+                        <small id="click-power-label">+1 Gold</small>
+                    </button>
+                </div>
+
+                <div class="card resources-card">
+                    <h2><i class="fa-solid fa-chart-pie"></i> Resources</h2>
+                    <div class="resource-list" id="resource-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center/Right: Tabbed Content -->
+            <main class="content-area">
+                <nav class="tabs-nav">
+                    <button class="tab-btn active" data-tab="buildings"><i class="fa-solid fa-house-chimney"></i> Buildings</button>
+                    <button class="tab-btn" data-tab="upgrades"><i class="fa-solid fa-arrow-trend-up"></i> Upgrades</button>
+                    <button class="tab-btn" data-tab="prestige"><i class="fa-solid fa-crown"></i> Prestige</button>
+                    <button class="tab-btn" data-tab="stats"><i class="fa-solid fa-chart-line"></i> Statistics</button>
+                    <button class="tab-btn" data-tab="settings"><i class="fa-solid fa-gear"></i> Settings</button>
+                </nav>
+
+                <!-- Tab Contents -->
+                <div class="tab-content active" id="tab-buildings">
+                    <div class="section-header">
+                        <h3>Production Buildings</h3>
+                        <p>Construct buildings to automatically generate resources over time.</p>
+                    </div>
+                    <div class="grid-cards" id="buildings-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-upgrades">
+                    <div class="section-header">
+                        <h3>Research & Upgrades</h3>
+                        <p>Unlock powerful upgrades to boost your click power and resource production.</p>
+                    </div>
+                    <div class="grid-cards" id="upgrades-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-prestige">
+                    <div class="prestige-banner">
+                        <div class="prestige-info">
+                            <h3><i class="fa-solid fa-crown text-warning"></i> Ascension / Prestige</h3>
+                            <p>Reset your resources and buildings in exchange for Prestige Points. Each Prestige Point grants a permanent <strong>+10% global production multiplier</strong>!</p>
+                        </div>
+                        <div class="prestige-action-box">
+                            <div class="prestige-stat">
+                                <span>Pending Prestige Points:</span>
+                                <strong id="pending-prestige-points">0</strong>
+                            </div>
+                            <button class="btn btn-warning btn-lg" id="prestige-btn" disabled>
+                                <i class="fa-solid fa-rocket"></i> Ascend Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-stats">
+                    <div class="section-header">
+                        <h3>Game Statistics</h3>
+                        <p>Track your lifetime progress and achievements.</p>
+                    </div>
+                    <div class="stats-grid" id="stats-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-settings">
+                    <div class="section-header">
+                        <h3>Settings & Options</h3>
+                    </div>
+                    <div class="settings-list">
+                        <div class="setting-item">
+                            <div>
+                                <h4>Auto-Save</h4>
+                                <p>Automatically save game every 30 seconds</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-autosave" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div>
+                                <h4>Scientific Notation</h4>
+                                <p>Display large numbers using scientific notation</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-scientific">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div>
+                                <h4>Export / Import Save Data</h4>
+                                <p>Copy your save string or load from code</p>
+                            </div>
+                            <div class="settings-actions">
+                                <button class="btn btn-secondary" id="settings-export-btn">Export Code</button>
+                                <button class="btn btn-secondary" id="settings-import-btn">Import Code</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container"></div>
+    </div>
+
+    <!-- Modal for Export/Import -->
+    <div class="modal" id="save-modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Export Save</h3>
+            <p id="modal-desc">Copy your save code below or paste a save code to import:</p>
+            <textarea id="save-code-textarea" rows="6"></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="modal-close-btn">Close</button>
+                <button class="btn btn-primary" id="modal-action-btn">Copy to Clipboard</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
