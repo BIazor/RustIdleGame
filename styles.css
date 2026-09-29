@@ -293,11 +293,11 @@ code, .mono {
     flex-direction: column;
     justify-content: space-between;
     gap: 12px;
-    transition: border-color 0.2s;
 }
 
 .entity-card:hover {
     border-color: var(--accent);
+    transition: none;
 }
 
 .entity-header {
