@@ -363,6 +363,51 @@ code, .mono {
     color: var(--success);
 }
 
+/* Prestige Perks */
+.perks-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.perk-card {
+    border-left: 4px solid var(--warning);
+}
+
+.perk-card.maxed {
+    border-left-color: var(--success);
+    opacity: 0.7;
+}
+
+.perk-desc {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+    margin-top: 4px;
+}
+
+.perks-summary {
+    padding: 16px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.perk-currency {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--warning);
+}
+
+.perk-currency strong {
+    font-size: 1.25rem;
+}
+
 /* Buttons */
 .btn {
     padding: 8px 16px;

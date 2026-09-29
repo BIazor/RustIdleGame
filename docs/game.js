@@ -70,6 +70,55 @@ const BUILDINGS = {
     }
 };
 
+
+const PRESTIGE_PERKS = {
+    perk_click: {
+        id: 'perk_click',
+        name: 'Golden Overload',
+        desc: '+2 Click Power per level.',
+        cost: 2,
+        costScaling: 1.5,
+        maxLevel: 10,
+        effect: { type: 'click_power', amount: 2 }
+    },
+    perk_speed: {
+        id: 'perk_speed',
+        name: 'Temporal Warp',
+        desc: '+15% Global Production per level.',
+        cost: 5,
+        costScaling: 2.0,
+        maxLevel: 10,
+        effect: { type: 'global_mult', amount: 0.15 }
+    },
+    perk_cheap: {
+        id: 'perk_cheap',
+        name: "Architect's Blessing",
+        desc: '-2% Building cost scaling per level.',
+        cost: 10,
+        costScaling: 2.5,
+        maxLevel: 5,
+        effect: { type: 'cost_reduction', amount: 0.02 }
+    },
+    perk_offline: {
+        id: 'perk_offline',
+        name: 'Astral Efficiency',
+        desc: '+20% Offline progress efficiency per level.',
+        cost: 4,
+        costScaling: 1.8,
+        maxLevel: 5,
+        effect: { type: 'offline_eff', amount: 0.20 }
+    },
+    perk_alchemy: {
+        id: 'perk_alchemy',
+        name: "Philosopher's Stone",
+        desc: '+100% Gold Production per level.',
+        cost: 15,
+        costScaling: 3.0,
+        maxLevel: 5,
+        effect: { type: 'gold_mult', amount: 1.0 }
+    }
+};
+
 const UPGRADES = {
     gold_clicker: {
         id: 'gold_clicker',
@@ -119,7 +168,7 @@ let game = {
     rates: { gold: 0.1, wood: 0.05, stone: 0.02, food: 0, science: 0, magic: 0 },
     buildings: {},
     upgrades: {},
-    prestige: { points: 0, totalEarnedGold: 0 },
+    prestige: { points: 0, totalEarnedGold: 0, unspentPoints: 0, spentPoints: 0 },
     stats: {
         timePlayed: 0,
         totalClicks: 0,
@@ -141,6 +190,14 @@ function initGameState() {
     for (let id in UPGRADES) {
         game.upgrades[id] = { level: 0 };
     }
+    if (!game.perks) {
+        game.perks = {};
+    }
+    for (let id in PRESTIGE_PERKS) {
+        if (!game.perks[id]) {
+            game.perks[id] = { level: 0 };
+        }
+    }
 }
 
 // Format numbers
@@ -159,14 +216,20 @@ function formatNum(num) {
 
 // Global production multiplier from prestige points
 function getGlobalMultiplier() {
-    return 1.0 + (game.prestige.points * 0.1);
+    let base = 1.0 + (game.prestige.points * 0.1);
+    let speedLvl = game.perks && game.perks.perk_speed ? game.perks.perk_speed.level : 0;
+    if (speedLvl > 0) {
+        base += speedLvl * 0.15;
+    }
+    return base;
 }
 
 // Click Power calculation
 function getClickPower() {
     let base = 1;
     let goldClickerLevel = game.upgrades.gold_clicker ? game.upgrades.gold_clicker.level : 0;
-    return base + goldClickerLevel;
+    let perkClickLvl = game.perks && game.perks.perk_click ? game.perks.perk_click.level : 0;
+    return base + goldClickerLevel + (perkClickLvl * 2);
 }
 
 // Calculate resource rates
@@ -186,12 +249,18 @@ function recalculateRates() {
     }
 
     // Apply upgrade multipliers
-    let alchemyLvl = game.upgrades.gold_multiplier ? game.upgrades.gold_multiplier.level : 0;
-    if (alchemyLvl > 0) {
-        newRates.gold *= Math.pow(1.5, alchemyLvl);
-    }
+        let alchemyLvl = game.upgrades.gold_multiplier ? game.upgrades.gold_multiplier.level : 0;
+        if (alchemyLvl > 0) {
+            newRates.gold *= Math.pow(1.5, alchemyLvl);
+        }
 
-    // Apply global multiplier
+        // Apply perk_alchemy
+        let perkAlchemyLvl = game.perks && game.perks.perk_alchemy ? game.perks.perk_alchemy.level : 0;
+        if (perkAlchemyLvl > 0) {
+            newRates.gold *= (1.0 + (perkAlchemyLvl * 1.0));
+        }
+
+        // Apply global multiplier
     let globalMult = getGlobalMultiplier();
     for (let r in newRates) {
         newRates[r] *= globalMult;
@@ -343,12 +412,57 @@ function updateUI() {
     }
 
     // Prestige calculation
-    let totalGold = game.stats.totalGained.gold || 0;
-    let pendingPrestige = Math.floor(Math.sqrt(totalGold) / 10);
-    document.getElementById('pending-prestige-points').textContent = formatNum(pendingPrestige);
-    document.getElementById('prestige-btn').disabled = pendingPrestige <= game.prestige.points;
+        let totalGold = game.stats.totalGained.gold || 0;
+        let pendingPrestige = Math.floor(Math.sqrt(totalGold) / 10);
+        document.getElementById('pending-prestige-points').textContent = formatNum(pendingPrestige);
+        document.getElementById('prestige-btn').disabled = pendingPrestige <= game.prestige.points;
 
-    // Statistics Tab
+        // Perks Tab
+        const perksContainer = document.getElementById('perks-container');
+        if (perksContainer) {
+            perksContainer.innerHTML = '';
+            let unspentPoints = game.prestige.unspentPoints !== undefined ? game.prestige.unspentPoints : 0;
+            document.getElementById('unspent-prestige-points').textContent = formatNum(unspentPoints);
+
+            for (let perkId in PRESTIGE_PERKS) {
+                let perk = PRESTIGE_PERKS[perkId];
+                let state = game.perks ? game.perks[perkId] : { level: 0 };
+                if (!state) state = { level: 0 };
+                if (!game.perks) game.perks = {};
+                if (!game.perks[perkId]) game.perks[perkId] = { level: 0 };
+                state = game.perks[perkId];
+
+                let cost = Math.floor(perk.cost * Math.pow(perk.costScaling, state.level));
+                let canAfford = unspentPoints >= cost && state.level < perk.maxLevel;
+                let isMaxed = state.level >= perk.maxLevel;
+
+                const card = document.createElement('div');
+                card.className = 'entity-card perk-card' + (isMaxed ? ' maxed' : '');
+                card.innerHTML = `
+                    <div class="entity-header">
+                        <div class="entity-title">
+                            <h4>${perk.name}</h4>
+                            <span class="perk-desc">${perk.desc}</span>
+                        </div>
+                        <div class="entity-level">Lvl ${state.level} / ${perk.maxLevel}</div>
+                    </div>
+                    <div class="entity-footer">
+                        <div class="entity-costs">
+                            <div class="cost-item ${canAfford ? 'affordable' : 'unaffordable'}">
+                                <i class="fa-solid fa-star text-warning"></i>
+                                <span>${isMaxed ? 'MAX' : formatNum(cost)} PP</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="buyPrestigePerk('${perkId}')" ${(!canAfford || isMaxed) ? 'disabled' : ''}>
+                            ${isMaxed ? 'Maxed' : 'Purchase'}
+                        </button>
+                    </div>
+                `;
+                perksContainer.appendChild(card);
+            }
+        }
+
+        // Statistics Tab
     const statsGrid = document.getElementById('stats-grid');
     statsGrid.innerHTML = `
         <div class="stat-box">
@@ -436,6 +550,7 @@ function performPrestige() {
     if (gained <= 0) return;
 
     game.prestige.points = pendingPrestige;
+    game.prestige.unspentPoints = (game.prestige.unspentPoints || 0) + gained;
 
     // Reset resources and buildings
     game.resources = { gold: 0, wood: 0, stone: 0, food: 0, science: 0, magic: 0 };
@@ -585,3 +700,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+
+function buyPrestigePerk(perkId) {
+    let perk = PRESTIGE_PERKS[perkId];
+    if (!game.perks) game.perks = {};
+    if (!game.perks[perkId]) game.perks[perkId] = { level: 0 };
+    let perkState = game.perks[perkId];
+    
+    if (perkState.level >= perk.maxLevel) return;
+    
+    // Calculate cost based on level
+    let cost = Math.floor(perk.cost * Math.pow(perk.costScaling, perkState.level));
+    let unspent = game.prestige.unspentPoints !== undefined ? game.prestige.unspentPoints : game.prestige.points;
+    
+    if (unspent < cost) {
+        showToast('Not enough Prestige Points!');
+        return;
+    }
+    
+    if (game.prestige.unspentPoints !== undefined) {
+        game.prestige.unspentPoints -= cost;
+    } else {
+        game.prestige.points -= cost; // fallback
+    }
+    game.prestige.spentPoints = (game.prestige.spentPoints || 0) + cost;
+    
+    perkState.level++;
+    recalculateRates();
+    updateUI();
+    showToast(`Purchased perk: ${perk.name}!`);
+}
